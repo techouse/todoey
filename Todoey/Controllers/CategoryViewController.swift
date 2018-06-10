@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
 
     // Get the default Realm
     let realm = try! Realm() // looks like a code smell but is apparently perfectly valid according to https://realm.io/docs/swift/latest/
@@ -29,7 +29,7 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath) // tap into the parent's cell of the same method
         
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
         
@@ -66,6 +66,21 @@ class CategoryViewController: UITableViewController {
         categories = realm.objects(Category.self)
 
         tableView.reloadData()
+    }
+    
+    //MARK: - Delete data from swipe
+    override func updateModel(at indexPath: IndexPath) {
+        if let category = categories?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(category)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+
+            // tableView.reloadData() // not required anymore since we use editActionsOptionsForRowAt below which automatically refreshes the tableView data
+        }
     }
 
     //MARK: - Add New Categories
