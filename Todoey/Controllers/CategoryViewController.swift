@@ -96,9 +96,14 @@ class CategoryViewController: SwipeTableViewController {
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
         
-        let alert = UIAlertController(title: "Add new Todoey category", message: "", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Add new category", message: "", preferredStyle: .alert)
         
-        let action = UIAlertAction(title: "Add category", style: .default) { (action) in
+        alert.addTextField { (field) in
+            field.placeholder = "Create new category"
+            textField = field
+        }
+        
+        alert.addAction(UIAlertAction(title: "Add category", style: .default) { (action) in
             // what will happen once the user click the add category button on our UIAlert
             let newCategory = Category()
             newCategory.name = textField.text!
@@ -106,15 +111,9 @@ class CategoryViewController: SwipeTableViewController {
             
             // save to realm; the categories Results now gets auto-updated!!! :)
             self.save(category: newCategory)
-        }
+        })
         
-        
-        alert.addTextField { (field) in
-            field.placeholder = "Create new category"
-            textField = field
-        }
-        
-        alert.addAction(action)
+        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
         
         present(alert, animated: true, completion: nil)
     }

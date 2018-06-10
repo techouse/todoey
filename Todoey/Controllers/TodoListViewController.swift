@@ -105,9 +105,14 @@ class TodoListViewController: SwipeTableViewController {
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
         
-        let alert = UIAlertController(title: "Add new Todoey item", message: "", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         
-        let action = UIAlertAction(title: "Add item", style: .default) { (action) in
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Create new item"
+            textField = alertTextField
+        }
+        
+        alert.addAction( UIAlertAction(title: "Add item", style: .default) { (action) in
             // what will happen once the user click the add item button on our UIAlert
             
             if let currentCategory = self.selectedCategory {
@@ -124,14 +129,9 @@ class TodoListViewController: SwipeTableViewController {
             }
             
             self.tableView.reloadData()
-        }
+        })
         
-        alert.addTextField { (alertTextField) in
-            alertTextField.placeholder = "Create new item"
-            textField = alertTextField
-        }
-        
-        alert.addAction(action)
+        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
         
         present(alert, animated: true, completion: nil)
     }
