@@ -7,14 +7,15 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
 
-    var categories = [Category]()
+    // Get the default Realm
+    let realm = try! Realm() // looks like a code smell but is apparently perfectly valid according to https://realm.io/docs/swift/latest/
     
-    // tap into the running application's delegate and downcast it to an AppDelegate to access it's persistantContainer.viewContext
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    // Results is an auto-updating container so we don't need to append to it anymore! :)
+    var categories: Results<Category>?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,12 +25,13 @@ class CategoryViewController: UITableViewController {
     
     //MARK: - TableView Datasource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categories.count
+        return categories?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        cell.textLabel?.text = categories[indexPath.row].name
+        
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
         
         return cell
     }
@@ -43,14 +45,16 @@ class CategoryViewController: UITableViewController {
         let destinationVC = segue.destination as! TodoListViewController
         
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categories[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
     
     //MARK: - Data Manipulation Methods
-    func saveCategories() {
+    func save(category: Category) {
         do {
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         } catch {
             print("Error saving context \(error)")
         }
@@ -58,36 +62,34 @@ class CategoryViewController: UITableViewController {
         tableView.reloadData()
     }
     
-    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
-        do {
-            categories = try context.fetch(request)
-        } catch {
-            print("Error fetching data form context \(error)")
-        }
-        
+    func loadCategories() {
+        categories = realm.objects(Category.self)
+
         tableView.reloadData()
     }
 
     //MARK: - Add New Categories
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        let alert = UIAlertController(title: "Add new Todoey category", message: "", preferredStyle: .alert)
         var textField = UITextField()
+        
+        let alert = UIAlertController(title: "Add new Todoey category", message: "", preferredStyle: .alert)
+        
+        let action = UIAlertAction(title: "Add category", style: .default) { (action) in
+            // what will happen once the user click the add category button on our UIAlert
+            let newCategory = Category()
+            newCategory.name = textField.text!
+            
+            // save to realm; the categories Results now gets auto-updated!!! :)
+            self.save(category: newCategory)
+        }
+        
         
         alert.addTextField { (field) in
             field.placeholder = "Create new category"
             textField = field
         }
         
-        alert.addAction(
-            UIAlertAction(title: "Add category", style: .default) { (action) in
-                // what will happen once the user click the add category button on our UIAlert
-                let newCategory = Category(context: self.context)
-                newCategory.name = textField.text!
-                self.categories.append(newCategory)
-                
-                self.saveCategories()
-            }
-        )
+        alert.addAction(action)
         
         present(alert, animated: true, completion: nil)
     }
